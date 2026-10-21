@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्मार्ट प्रिंट | फाईल्स अपलोड करा (Upload Documents)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase App & Database SDKs for Realtime Mobile-to-PC Sync -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="js/suyoms-firebase.js"></script>
+
+    <style>
+        :root {
+            --primary: #f95700; /* ठळक भगवा */
+            --primary-hover: #ff6f1a;
+            --primary-dark: #c03d00;
+            --primary-light: rgba(249, 87, 0, 0.15);
+            --bg: #09090d; /* गडद काळा */
+            --bg-card: #121218; /* गडद कार्ड */
+            --bg-input: #07070a;
+            --border: #262636;
+            --border-light: #1c1c28;
+            --text-main: #ffffff;
+            --text-sub: #ff8c00;
+            --text-muted: #a1a1aa;
+            --success: #16a34a;
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.5);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', 'Noto Sans Devanagari', 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 40px; }
+
+        /* HEADER - काळा आणि भगवा */
+        .app-header {
+            background: #09090d;
+            border-bottom: 2.5px solid var(--primary);
+            padding: 16px 20px;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .header-badge {
+            width: 34px;
+            height: 34px;
+            background: #09090d;
+            border: 2px solid var(--primary);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff8c00;
+            font-size: 15px;
+            font-weight: 900;
+            box-shadow: 0 2px 10px rgba(249, 87, 0, 0.3);
+        }
+
+        .shop-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff8c00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #4ade80;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 540px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 18px;
+            border: 1.5px solid var(--border);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 18px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        /* INPUTS */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ff8c00;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--bg-input);
+            color: #ffffff;
+        }
+
+        .form-control:focus {
+            background: #000000;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(249, 87, 0, 0.25);
+        }
+
+        /* UPLOAD DROP ZONE - काळा आणि भगवा */
+        .drop-zone {
+            border: 2px dashed var(--primary);
+            background: rgba(249, 87, 0, 0.05);
+            border-radius: 16px;
+            padding: 28px 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            background: rgba(249, 87, 0, 0.12);
+            border-color: #ff8c00;
+            transform: scale(1.01);
+        }
+
+        .drop-icon {
+            font-size: 42px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .drop-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .drop-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* FILE LIST */
+        .file-list {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-item {
+            background: #0d0d12;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .file-icon {
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .btn-remove-file {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* PRINT CONFIG */
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .copies-counter {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-input);
+        }
+
+        .btn-qty {
+            width: 44px;
+            height: 44px;
+            background: #161620;
+            border: none;
+            font-size: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .btn-qty:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .qty-input {
+            flex: 1;
+            height: 44px;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            background: var(--bg-input);
+            outline: none;
+        }
+
+        .pill-select-group {
+            display: flex;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .pill-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 800;
+            border-radius: 9px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pill-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(249, 87, 0, 0.4);
+        }
+
+        /* SUBMIT BUTTON - भगवा आणि काळा */
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #f95700, #ff6f1a);
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(249, 87, 0, 0.4);
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff6f1a, #c03d00);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(249, 87, 0, 0.6);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* PROGRESS BAR */
+        .progress-box {
+            display: none;
+            margin-top: 14px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #1c1c26;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f95700, #ff8c00);
+            transition: width 0.3s;
+        }
+
+        /* SUCCESS VIEW */
+        .success-card {
+            display: none;
+            text-align: center;
+            padding: 36px 24px;
+            border-top: 4px solid var(--primary);
+        }
+
+        .token-display-box {
+            background: #09090d;
+            border: 2px solid var(--primary);
+            border-radius: 18px;
+            padding: 22px;
+            margin: 20px 0;
+            color: #ffffff;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.7);
+        }
+
+        .token-number {
+            font-size: 46px;
+            font-weight: 900;
+            color: #ff8c00;
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .token-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a1a1aa;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border-radius: 10px;
+            border: 1.5px solid var(--primary);
+            background: #161620;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+<!-- APP HEADER -->
+<header class="app-header">
+    <div class="header-top">
+        <div class="header-badge">SP</div>
+        <h1 class="shop-name" id="shopNameHeader">सुयोग ऑनलाईन झेरॉक्स सेंटर</h1>
+    </div>
+    <div class="header-subtitle">
+        <span class="live-dot"></span>
+        <span>लाईव्ह काउंटर प्रिंट सेवा (Instant Print Queue)</span>
+    </div>
+</header>
+
+<div class="container">
+    <!-- UPLOAD FORM CARD -->
+    <div class="card" id="uploadCard">
+        <form id="customerUploadForm" onsubmit="handleCustomerSubmit(event)">
+            <!-- CUSTOMER DETAILS -->
+            <div class="section-title">
+                <i class="fa-solid fa-user"></i>
+                <span>तुमची माहिती (Customer Details)</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">तुमचे नाव (Full Name) *</label>
+                <input type="text" id="custName" class="form-control" placeholder="उदा. राहुल पवार" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">मोबाईल नंबर (WhatsApp / Mobile) - पर्यायी</label>
+                <input type="tel" id="custPhone" class="form-control" placeholder="उदा. 9876543210" maxlength="10">
+            </div>
+
+            <!-- FILE UPLOAD DROP ZONE -->
+            <div class="section-title" style="margin-top: 22px;">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                <span>डॉक्युमेंट्स / फोटो निवडा (Select Files) *</span>
+            </div>
+
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <div class="drop-title">येथे टच करून फाईल्स निवडा</div>
+                <div class="drop-hint">PDF, JPG, PNG, DOC (एकापेक्षा जास्त फाईल्स निवडू शकता)</div>
+                <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(this)">
+            </div>
+
+            <div class="file-list" id="selectedFileList"></div>
+
+            <!-- PRINT OPTIONS -->
+            <div class="section-title" style="margin-top: 22px;">
+                <i class="fa-solid fa-sliders"></i>
+                <span>प्रिंट सेटिंग्ज (Print Options)</span>
+            </div>
+
+            <div class="config-grid">
+                <div>
+                    <label class="form-label">प्रती (Copies)</label>
+                    <div class="copies-counter">
+                        <button type="button" class="btn-qty" onclick="changeQty(-1)">-</button>
+                        <input type="number" id="copiesCount" class="qty-input" value="1" min="1" max="50">
+                        <button type="button" class="btn-qty" onclick="changeQty(1)">+</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">कलर निवडा (Color)</label>
+                    <div class="pill-select-group">
+                        <button type="button" class="pill-btn active" id="btnBw" onclick="setColorMode('bw')">B & W</button>
+                        <button type="button" class="pill-btn" id="btnColor" onclick="setColorMode('color')">🎨 रंगीत</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">पाने (Pages - पर्यायी)</label>
+                <input type="text" id="pageRange" class="form-control" placeholder="उदा. सर्व पाने किंवा 1-3, 5">
+            </div>
+
+            <!-- SUBMIT -->
+            <button type="submit" id="submitBtn" class="btn-submit" style="margin-top: 20px;">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span id="submitBtnText">प्रिंटसाठी काउंटरला पाठवा</span>
+            </button>
+
+            <div class="progress-box" id="progressBox">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div style="font-size:11px; text-align:center; color:var(--text-muted); margin-top:6px;" id="progressText">अपलोड होत आहे...</div>
+            </div>
+        </form>
+    </div>
+
+    <!-- SUCCESS CONFIRMATION CARD -->
+    <div class="card success-card" id="successCard">
+        <div style="width: 68px; height: 68px; background: #0d0d11; border: 2px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--primary); margin: 0 auto 16px;">
+            <i class="fa-solid fa-check"></i>
+        </div>
+
+        <h2 style="font-size: 22px; font-weight: 800; color: #ffffff;">फाईल्स यशस्वीरीत्या पाठवल्या!</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">तुमच्या फाईल्स काउंटरच्या प्रिंट रांगेत जोडल्या गेल्या आहेत.</p>
+
+        <div class="token-display-box">
+            <div class="token-label">तुमचा टोकन नंबर (Your Token)</div>
+            <div class="token-number" id="displayToken">#102</div>
+            <div style="font-size: 12px; color: #ff8c00; margin-top: 6px; font-weight: 700;">
+                <i class="fa-solid fa-circle-info"></i> कृपया हा टोकन नंबर काउंटरवर सांगा!
+            </div>
+        </div>
+
+        <div style="background: #08080c; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; text-align: left; font-size: 13px; line-height: 1.6; color: #f4f4f5;">
+            <div><strong style="color: #ff8c00;">नाव:</strong> <span id="summaryName"></span></div>
+            <div><strong style="color: #ff8c00;">एकूण फाईल्स:</strong> <span id="summaryFiles"></span></div>
+            <div><strong style="color: #ff8c00;">प्रती:</strong> <span id="summaryCopies"></span></div>
+            <div><strong style="color: #ff8c00;">कलर मोड:</strong> <span id="summaryColor"></span></div>
+        </div>
+
+        <button type="button" class="btn-secondary" onclick="resetFormForNewUpload()">
+            <i class="fa-solid fa-plus"></i>
+            <span>अजून फाईल्स पाठवा (Send More Files)</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    let selectedFiles = [];
+    let selectedColor = 'bw';
+
+    // BroadcastChannel for cross-tab realtime messaging
+    let channel;
+    try {
+        channel = new BroadcastChannel('smart_print_channel');
+    } catch(e) {}
+
+    // Parse URL params for shop name
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopSlugParam = urlParams.get('shop') || localStorage.getItem('sp_shop_slug') || 'suyomsonline';
+    const savedShopName = localStorage.getItem('sp_shop_name') || 'सुयोग ऑनलाईन झेरॉक्स सेंटर';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('shopNameHeader').innerText = savedShopName;
+        setupDragDrop();
+    });
+
+    function setupDragDrop() {
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+        });
+        dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files) {
+                addFiles(Array.from(e.dataTransfer.files));
+            }
+        });
+    }
+
+    function handleFileSelect(input) {
+        if (!input.files) return;
+        addFiles(Array.from(input.files));
+    }
+
+    function addFiles(files) {
+        selectedFiles = selectedFiles.concat(files);
+        renderFileList();
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderFileList();
+    }
+
+    function renderFileList() {
+        const list = document.getElementById('selectedFileList');
+        if (selectedFiles.length === 0) {
+            list.innerHTML = '';
+            return;
+        }
+
+        list.innerHTML = selectedFiles.map((f, i) => `
+            <div class="file-item">
+                <div class="file-info">
+                    <i class="${getFileIcon(f.name)} file-icon"></i>
+                    <div>
+                        <div class="file-name">${escapeHtml(f.name)}</div>
+                        <div class="file-size">${formatBytes(f.size)}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-remove-file" onclick="removeFile(${i})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function getFileIcon(filename) {
+        const ext = (filename || '').split('.').pop().toLowerCase();
+        if (ext === 'pdf') return 'fa-solid fa-file-pdf';
+        if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'fa-solid fa-file-image';
+        if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
+        return 'fa-solid fa-file-lines';
+    }
+
+    function changeQty(diff) {
+        const input = document.getElementById('copiesCount');
+        let val = parseInt(input.value) || 1;
+        val = Math.max(1, Math.min(50, val + diff));
+        input.value = val;
+    }
+
+    function setColorMode(mode) {
+        selectedColor = mode;
+        const btnBw = document.getElementById('btnBw');
+        const btnColor = document.getElementById('btnColor');
+        if (mode === 'color') {
+            btnColor.classList.add('active');
+            btnBw.classList.remove('active');
+        } else {
+            btnBw.classList.add('active');
+            btnColor.classList.remove('active');
+        }
+    }
+
+    async function handleCustomerSubmit(e) {
+        e.preventDefault();
+        if (selectedFiles.length === 0) {
+            alert('कृपया किमान 1 फाईल निवडा (Please choose at least 1 document).');
+            return;
+        }
+
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+        const copies = parseInt(document.getElementById('copiesCount').value) || 1;
+        const pages = document.getElementById('pageRange').value.trim();
+        const submitBtn = document.getElementById('submitBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const progressBox = document.getElementById('progressBox');
+        const progressFill = document.getElementById('progressFill');
+
+        submitBtn.disabled = true;
+        submitBtnText.innerText = 'अपलोड होत आहे... (Sending)';
+        progressBox.style.display = 'block';
+        progressFill.style.width = '30%';
+
+        const tokenNum = Math.floor(100 + Math.random() * 900);
+        const customerId = 'cust_' + Date.now();
+        const jobs = [];
+
+        // Convert files to Base64 data URLs for seamless Firebase Realtime DB storage
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Send to Firebase Realtime Database
+        try {
+            const fb = getSuyomsFirebase();
+            if (fb && fb.db) {
+                const fileDataPromises = selectedFiles.map(async (f, idx) => {
+                    let base64 = '';
+                    if (f.size < 5 * 1024 * 1024) { // Under 5MB store direct Base64
+                        try { base64 = await fileToBase64(f); } catch(e){}
+                    }
+                    return {
+                        id: 'f_' + Date.now() + '_' + idx,
+                        name: f.name,
+                        size: f.size,
+                        type: f.name.split('.').pop() || 'doc',
+                        dataUrl: base64
+                    };
+                });
+
+                const preparedFiles = await Promise.all(fileDataPromises);
+
+                const firebasePayload = {
+                    id: customerId,
+                    token_number: tokenNum,
+                    customer_name: name,
+                    phone: phone,
+                    copies: copies,
+                    color_mode: selectedColor,
+                    pages: pages || 'All',
+                    shop_slug: shopSlugParam,
+                    createdAt: Date.now(),
+                    status: 'pending',
+                    files: preparedFiles
+                };
+
+                await fb.db.ref('print_queue/' + customerId).set(firebasePayload);
+                console.log('Firebase write SUCCESS:', customerId);
+            }
+        } catch(fbErr) {
+            console.warn('Firebase sync warning:', fbErr);
+        }
+
+        // Save into IndexedDB for instant cross-tab live queue
+        try {
+            const db = await openDb();
+            const tx = db.transaction(['customers', 'files'], 'readwrite');
+            const custStore = tx.objectStore('customers');
+            const fileStore = tx.objectStore('files');
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const f = selectedFiles[i];
+                const jobId = 'job_' + Date.now() + '_' + i;
+                fileStore.put({ id: jobId, name: f.name, blob: f });
+                jobs.push({
+                    id: jobId,
+                    serial_number: i + 1,
+                    original_filename: f.name,
+                    file_size: f.size,
+                    file_type: f.name.split('.').pop() || 'doc',
+                    copies: copies,
+                    color_mode: selectedColor,
+                    pages: pages,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+            }
+
+            const customerData = {
+                id: customerId,
+                customer_name: name,
+                token_number: tokenNum,
+                phone: phone,
+                createdAt: Date.now(),
+                jobs: jobs
+            };
+
+            custStore.put(customerData);
+
+            await new Promise((resolve, reject) => {
+                tx.oncomplete = resolve;
+                tx.onerror = reject;
+            });
+        } catch(err) {
+            console.warn('Local DB write error:', err);
+        }
+
+        // Also attempt upload to PHP backend if available
+        try {
+            const formData = new FormData();
+            formData.append('customer_name', name);
+            formData.append('shop_slug', shopSlugParam);
+            formData.append('phone', phone);
+            formData.append('copies', copies);
+            formData.append('color_mode', selectedColor);
+            formData.append('token_number', tokenNum);
+            for (let i = 0; i < selectedFiles.length; i++) {
+                formData.append('files[]', selectedFiles[i]);
+            }
+            fetch('api.php?action=upload', { method: 'POST', body: formData }).catch(() => {});
+        } catch(err) {}
+
+        // Notify Shopkeeper Dashboard via BroadcastChannel
+        progressFill.style.width = '100%';
+        if (channel) {
+            channel.postMessage({
+                type: 'NEW_CUSTOMER_UPLOAD',
+                customer_id: customerId,
+                customer_name: name,
+                token: tokenNum,
+                file_count: selectedFiles.length
+            });
+        }
+
+        setTimeout(() => {
+            // Show Success View
+            document.getElementById('uploadCard').style.display = 'none';
+            document.getElementById('successCard').style.display = 'block';
+            document.getElementById('displayToken').innerText = '#' + tokenNum;
+            document.getElementById('summaryName').innerText = name;
+            document.getElementById('summaryFiles').innerText = `${selectedFiles.length} फाईल्स (${selectedFiles.map(f=>f.name).join(', ')})`;
+            document.getElementById('summaryCopies').innerText = `${copies} प्रती`;
+            document.getElementById('summaryColor').innerText = selectedColor === 'color' ? '🎨 रंगीत (Color)' : '⚫ B & W (कृष्ण-धवल)';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 500);
+    }
+
+    function resetFormForNewUpload() {
+        selectedFiles = [];
+        document.getElementById('selectedFileList').innerHTML = '';
+        document.getElementById('customerUploadForm').reset();
+        document.getElementById('copiesCount').value = '1';
+        setColorMode('bw');
+        document.getElementById('progressBox').style.display = 'none';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtnText').innerText = 'प्रिंटसाठी काउंटरला पाठवा';
+        document.getElementById('uploadCard').style.display = 'block';
+        document.getElementById('successCard').style.display = 'none';
+    }
+
+    function openDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('SmartPrintDB', 2);
+            req.onupgradeneeded = (e) => {
+                const d = e.target.result;
+                if (!d.objectStoreNames.contains('customers')) {
+                    d.createObjectStore('customers', { keyPath: 'id' });
+                }
+                if (!d.objectStoreNames.contains('files')) {
+                    d.createObjectStore('files', { keyPath: 'id' });
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>

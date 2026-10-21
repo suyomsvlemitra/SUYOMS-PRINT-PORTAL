@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Print | Shopkeeper Live Counter Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase App & Database SDKs for Realtime Mobile-to-PC Sync -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="js/suyoms-firebase.js"></script>
+
+    <!-- Direct CDN for QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Fallback in case CDN is blocked
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="js/qrcode.min.js"><\/script>');
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #f95700; /* ठळक भगवा (Rich Saffron) */
+            --primary-hover: #ff6f1a;
+            --primary-dark: #c03d00;
+            --primary-light: rgba(249, 87, 0, 0.15);
+            --accent: #ff8c00;
+            --bg: #09090d; /* गडद काळा (Deep Pitch Black) */
+            --bg-card: #121218; /* काळे कार्ड (Dark Obsidian Card) */
+            --bg-card-hover: #181822;
+            --border: #262636;
+            --border-light: #1c1c28;
+            --text-main: #ffffff; /* शुभ्र पांढरा मजकूर */
+            --text-sub: #d4d4d8;
+            --text-muted: #a1a1aa;
+            --success: #16a34a;
+            --success-bg: rgba(22, 163, 74, 0.15);
+            --success-border: #15803d;
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.15);
+            --warning-border: #b45309;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --danger-border: #b91c1c;
+            --shadow-sm: 0 2px 6px rgba(0,0,0,0.4);
+            --shadow-md: 0 6px 22px rgba(0,0,0,0.5);
+            --shadow-lg: 0 14px 45px rgba(0,0,0,0.7);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', 'Noto Sans Devanagari', 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 60px; }
+
+        /* SITE HEADER - काळा आणि भगवा थीम */
+        .site-header {
+            background: #060608;
+            border-bottom: 2.5px solid var(--primary);
+            padding: 0 24px;
+            height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .brand-logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #f95700, #ff8c00);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            box-shadow: 0 3px 14px rgba(249, 87, 0, 0.5);
+        }
+
+        .brand-titles { display: flex; flex-direction: column; }
+        .brand-name { font-size: 19px; font-weight: 800; color: #ffffff; line-height: 1.1; }
+        .brand-subtitle { font-size: 11px; font-weight: 700; color: #ff8c00; letter-spacing: 0.5px; }
+
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-header-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1.5px solid #272738;
+            background: #14141d;
+            color: #f4f4f5;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-header-link:hover { background: #1c1c28; border-color: var(--primary); color: #ff8c00; }
+
+        .btn-sound-toggle {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 13px; border-radius: 10px; font-size: 13px; font-weight: 700;
+            border: 1.5px solid #272738; background: #14141d; cursor: pointer; color: #f4f4f5;
+            transition: all 0.2s;
+        }
+        .btn-sound-toggle.active { color: #ffffff; border-color: var(--primary); background: rgba(249, 87, 0, 0.25); }
+
+        /* MAIN CONTAINER */
+        .main-container { max-width: 1240px; margin: 24px auto; padding: 0 20px; }
+
+        .btn-nav {
+            padding: 9px 16px; background: #14141d; border: 1.5px solid var(--border);
+            border-radius: 10px; color: #f4f4f5; font-size: 14px; font-weight: 700;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-nav:hover { background: #1c1c28; border-color: var(--primary); color: #ff8c00; }
+
+        /* PROFILE CARD - काळा आणि भगवा */
+        .profile-card {
+            background: var(--bg-card); border: 1.5px solid var(--border); border-top: 4px solid var(--primary); border-radius: 18px;
+            padding: 22px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap;
+            align-items: center; justify-content: space-between; gap: 16px; box-shadow: var(--shadow-md);
+        }
+        .profile-info { display: flex; align-items: center; gap: 16px; }
+        .profile-avatar {
+            width: 58px; height: 58px;
+            background: #09090d;
+            border: 2px solid var(--primary); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--primary);
+            box-shadow: 0 0 15px rgba(249, 87, 0, 0.2);
+        }
+        .shop-name-wrap { display: flex; align-items: center; gap: 8px; }
+        .shop-name { font-size: 23px; font-weight: 800; color: #ffffff; line-height: 1.2; }
+        .btn-edit-shop {
+            background: none; border: none; color: #a1a1aa; cursor: pointer;
+            font-size: 14px; padding: 4px; border-radius: 6px; transition: color 0.2s;
+        }
+        .btn-edit-shop:hover { color: var(--primary); }
+        .shop-status-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            background: rgba(22, 163, 74, 0.15); border: 1.5px solid #16a34a; border-radius: 20px;
+            color: #4ade80; font-size: 12px; font-weight: 700; margin-top: 4px;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            animation: pulse 1.8s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .url-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-action {
+            padding: 10px 18px; border-radius: 11px; font-size: 14px; font-weight: 700;
+            border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f95700, #ea580c);
+            color: #fff; box-shadow: 0 4px 16px rgba(249, 87, 0, 0.4);
+        }
+        .btn-primary:hover { background: linear-gradient(135deg, #ff6f1a, #f95700); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(249, 87, 0, 0.55); }
+
+        /* CONTROLS CARD */
+        .controls-card {
+            background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 18px;
+            padding: 18px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap;
+            align-items: center; justify-content: space-between; gap: 16px; box-shadow: var(--shadow-sm);
+        }
+        .controls-left { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .toggle-group { display: flex; align-items: center; gap: 10px; }
+        .toggle-label { font-size: 14px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px; }
+        .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #272738; transition: .3s; border-radius: 30px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .pause-btn {
+            padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700;
+            border: 1.5px solid; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .pause-btn.paused { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: #b45309; }
+        .pause-btn.running { background: rgba(22, 163, 74, 0.15); color: #4ade80; border-color: #16a34a; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px; margin-bottom: 22px;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 16px;
+            padding: 18px 20px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 13px; display: flex;
+            align-items: center; justify-content: center; font-size: 20px;
+        }
+        .stat-val { font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.1; }
+        .stat-lbl { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-top: 2px; }
+
+        /* QUEUE SECTION */
+        .queue-section-title {
+            font-size: 19px; font-weight: 800; color: #ffffff; margin-bottom: 14px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+
+        .customer-card {
+            background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 16px;
+            margin-bottom: 14px; overflow: hidden; box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s;
+        }
+        .customer-card:hover { border-color: #ff8c00; }
+        .customer-card.open { border-color: var(--primary); }
+        .customer-card.new-arrival {
+            border-color: var(--primary);
+            animation: highlightFade 3s ease forwards;
+        }
+        @keyframes highlightFade {
+            0% { box-shadow: 0 0 0 4px rgba(249, 87, 0, 0.45); }
+            100% { box-shadow: var(--shadow-sm); }
+        }
+
+        .customer-header {
+            padding: 16px 22px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; background: var(--bg-card); user-select: none;
+        }
+        .customer-title-wrap { display: flex; align-items: center; gap: 14px; }
+        .customer-avatar {
+            width: 44px; height: 44px; background: #060608;
+            color: #f95700; border: 2px solid var(--primary); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px;
+            box-shadow: 0 2px 10px rgba(249, 87, 0, 0.25);
+        }
+        .customer-name { font-size: 17px; font-weight: 800; color: #ffffff; }
+        .customer-meta { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+
+        .token-badge {
+            background: #060608; color: #ff8c00; font-weight: 800;
+            padding: 3px 10px; border-radius: 6px; font-size: 12px; border: 1.5px solid var(--primary);
+        }
+
+        .customer-ratio {
+            font-size: 13px; font-weight: 800; color: #ff8c00; background: rgba(249, 87, 0, 0.15);
+            padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--primary);
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .customer-ratio.completed { color: #4ade80; background: rgba(22, 163, 74, 0.15); border-color: #16a34a; }
+
+        .customer-body { display: none; padding: 18px 22px; border-top: 1.5px solid var(--border); background: #0b0b10; }
+        .customer-card.open .customer-body { display: block; }
+        .customer-card.open .chevron-icon { transform: rotate(180deg); }
+        .chevron-icon { transition: transform 0.25s ease; color: var(--text-muted); }
+
+        .jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .jobs-table th {
+            text-align: left; padding: 10px 14px; color: #ff8c00;
+            font-size: 11px; text-transform: uppercase; border-bottom: 1.5px solid var(--border);
+            font-weight: 700; background: #08080c;
+        }
+        .jobs-table td { padding: 14px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; color: #f4f4f5; }
+        .jobs-table tr:hover td { background: rgba(249, 87, 0, 0.04); }
+        .jobs-table tr:last-child td { border-bottom: none; }
+
+        .job-status-badge {
+            display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid #b45309; }
+        .status-printing { background: rgba(249, 87, 0, 0.2); color: #ff8c00; border: 1px solid #f95700; }
+        .status-printed { background: rgba(22, 163, 74, 0.15); color: #4ade80; border: 1px solid #16a34a; }
+        .status-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #b91c1c; }
+
+        .btn-job-action {
+            padding: 7px 13px; font-size: 12px; font-weight: 700; border-radius: 8px;
+            border: 1.5px solid var(--border); background: #161620; color: #f4f4f5; cursor: pointer; display: inline-flex;
+            align-items: center; gap: 6px; transition: all 0.15s ease;
+        }
+        .btn-job-action:hover { background: #222230; border-color: var(--primary); color: #ff8c00; }
+        .btn-job-print { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .btn-job-print:hover { background: var(--primary-hover); }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px; background: var(--bg-card);
+            border: 2px dashed var(--border); border-radius: 18px; color: var(--text-muted);
+        }
+
+        /* MODAL - काळा आणि भगवा */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+        }
+        .modal-box {
+            background: #111117; border: 2px solid var(--primary); border-radius: 20px; max-width: 500px; width: 100%;
+            padding: 28px; box-shadow: 0 16px 50px rgba(0,0,0,0.85); position: relative; animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            color: #ffffff;
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .close-modal {
+            position: absolute; top: 18px; right: 18px; background: #1a1a24; border: 1.5px solid var(--border);
+            border-radius: 8px; color: #a1a1aa; font-size: 16px; cursor: pointer; width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .close-modal:hover { background: #272738; color: #ffffff; border-color: var(--primary); }
+
+        /* TOAST NOTIFICATION */
+        .toast-msg {
+            position: fixed; bottom: 24px; right: 24px; background: #0a0a0e; color: #fff;
+            border: 1.5px solid var(--primary);
+            padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 2000; display: flex; align-items: center; gap: 10px;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast-msg.show { transform: translateY(0); opacity: 1; }
+
+        @media (max-width: 768px) {
+            .site-header { padding: 0 14px; }
+            .profile-card { padding: 18px; }
+            .controls-card { padding: 16px; }
+            .jobs-table th:nth-child(4), .jobs-table td:nth-child(4) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SITE HEADER -->
+<header class="site-header">
+    <div class="header-brand" onclick="window.location.reload()">
+        <div class="brand-logo-icon">SP</div>
+        <div class="brand-titles">
+            <span class="brand-name">Smart Suyoms Print</span>
+            <span class="brand-subtitle">स्मार्ट प्रिंट व झेरॉक्स डॅशबोर्ड</span>
+        </div>
+    </div>
+
+    <div class="header-actions">
+        <button class="btn-sound-toggle active" id="soundToggleBtn" onclick="toggleSoundAlert()" title="ध्वनी सूचना (Notification Chime)">
+            <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+            <span id="soundLabel">Sound On</span>
+        </button>
+        <a href="customer.html" target="_blank" class="btn-header-link" title="Open Customer Upload Page">
+            <i class="fa-solid fa-up-right-from-square"></i>
+            <span>Customer View</span>
+        </a>
+        <button class="btn-header-link" onclick="showSettingsModal()" title="दुकानाचे नाव आणि सेटिंग्ज">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+        </button>
+    </div>
+</header>
+
+<div class="main-container">
+    <!-- SHOP PROFILE CARD -->
+    <div class="profile-card">
+        <div class="profile-info">
+            <div class="profile-avatar"><i class="fa-solid fa-store"></i></div>
+            <div>
+                <div class="shop-name-wrap">
+                    <h1 class="shop-name" id="shopNameDisplay">सुयोग ऑनलाईन झेरॉक्स सेंटर</h1>
+                    <button class="btn-edit-shop" onclick="showSettingsModal()" title="दुकानाचे नाव बदला"><i class="fa-solid fa-pen-to-square"></i></button>
+                </div>
+                <div class="shop-status-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Live Counter Queue Active · ग्राहकांची रांग सुरू आहे</span>
+                </div>
+            </div>
+        </div>
+        <div class="url-actions">
+            <button type="button" class="btn-action btn-primary" onclick="showDirectUploadModal()">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>➕ Direct Upload</span>
+            </button>
+            <button type="button" class="btn-action btn-nav" onclick="copyCustomerUrl()">
+                <i class="fa-solid fa-copy"></i>
+                <span id="copyBtnText">Copy Customer Link</span>
+            </button>
+            <button type="button" class="btn-action btn-nav" onclick="showQrModal()">
+                <i class="fa-solid fa-qrcode"></i>
+                <span>View / Download QR</span>
+            </button>
+            <a href="poster.html" target="_blank" class="btn-action btn-nav" id="posterLink">
+                <i class="fa-solid fa-print"></i>
+                <span>QR Poster (A4)</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- CONTROLS TOOLBAR -->
+    <div class="controls-card">
+        <div class="controls-left">
+            <div class="toggle-group">
+                <span class="toggle-label"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Auto-Print</span>
+                <label class="switch">
+                    <input type="checkbox" id="autoPrintToggle" onchange="toggleAutoPrint(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group" style="padding-left:16px; border-left:1.5px solid var(--border);">
+                <span class="toggle-label"><i class="fa-solid fa-user-shield" style="color:var(--primary);"></i> Permission Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="approvalModeToggle" onchange="toggleApprovalMode(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group" style="padding-left:16px; border-left:1.5px solid var(--border);">
+                <span class="toggle-label"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> Auto-Delete</span>
+                <select id="autoDeleteSelect" onchange="changeAutoDelete(this.value)" style="padding:6px 12px; border-radius:9px; border:1.5px solid var(--border); font-size:13px; font-weight:700; background:#161622; color:#ffffff;">
+                    <option value="0">Off (कधीही नाही)</option>
+                    <option value="1">1 Minute</option>
+                    <option value="5" selected>5 Minutes</option>
+                    <option value="15">15 Minutes</option>
+                    <option value="30">30 Minutes</option>
+                </select>
+            </div>
+            <button class="pause-btn running" id="pauseQueueBtn" onclick="togglePauseQueue()">
+                <i class="fa-solid fa-pause"></i> <span>Queue Active</span>
+            </button>
+        </div>
+        <div>
+            <button class="btn-nav" onclick="clearCompletedJobs()">
+                <i class="fa-solid fa-broom" style="color:var(--text-muted);"></i>
+                <span>Clear Completed Jobs</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#0f0f12; color:#f95700; border:1px solid rgba(249,87,0,0.3);">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statCustomers">0</div>
+                <div class="stat-lbl">Walk-in Customers (ग्राहक)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#22150b; color:#ff8c00; border:1px solid rgba(249,87,0,0.4);">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statPending">0</div>
+                <div class="stat-lbl">Pending Files (बाकी)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(22, 163, 74, 0.15); color:#4ade80; border:1px solid #16a34a;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statPrinted">0</div>
+                <div class="stat-lbl">Printed Files (पूर्ण)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239, 68, 68, 0.15); color:#f87171; border:1px solid #b91c1c;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div>
+                <div class="stat-val" id="statFailed">0</div>
+                <div class="stat-lbl">Rejected / Failed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE DOCUMENT PRINT QUEUE -->
+    <div class="queue-section-title">
+        <span><i class="fa-solid fa-layer-group" style="color:var(--primary); margin-right:8px;"></i> Live Document Print Queue (लाईव्ह प्रिंट रांग)</span>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-nav" style="padding:6px 14px; font-size:12px;" onclick="renderDashboard()">
+                <i class="fa-solid fa-arrows-rotate"></i> <span>Refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="customerQueueList">
+        <div class="empty-state">
+            <i class="fa-solid fa-folder-open" style="font-size: 44px; margin-bottom: 16px; color:#f95700;"></i>
+            <h3 style="font-size:18px; color:#ffffff; margin-bottom:6px;">सध्या कोणतीही फाईल रांगेत नाही (No Customer Uploads Yet)</h3>
+            <p style="font-size:13px; max-width:440px; margin:0 auto; color:var(--text-muted);">तुमच्या काउंटरचा QR कोड किंवा लिंक ग्राहकांना द्या, जेणेकरून ते मोबाईलवरून थेट प्रिंटिंगसाठी फाईल्स पाठवू शकतील.</p>
+        </div>
+    </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-box">
+        <button class="close-modal" onclick="hideQrModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h2 style="font-size:20px; font-weight:800; color:#ffffff;"><i class="fa-solid fa-qrcode" style="color:var(--primary); margin-right:6px;"></i> काउंटरचा QR कोड (Counter QR)</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">हा QR कोड ग्राहक मोबाईल कॅमेऱ्याने स्कॅन करून थेट डॉक्युमेंट्स अपलोड करू शकतात.</p>
+        
+        <div style="background:#09090d; border:1.5px solid var(--primary); border-radius:16px; padding:20px; margin:18px 0; text-align:center;">
+            <h3 style="font-size:18px; font-weight:800; color:#ffffff;" id="qrShopName">सुयोग ऑनलाईन</h3>
+            <div id="qrcodeCanvas" style="width:200px; height:200px; margin:14px auto; display:flex; align-items:center; justify-content:center; background:#ffffff; padding:8px; border-radius:10px; box-shadow:0 0 15px rgba(249,87,0,0.3);"></div>
+            <p style="font-size:11px; font-weight:700; color:#ff8c00; margin-top:8px;">Scan with Camera / Google Lens to upload</p>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:14px;">
+            <button type="button" class="btn-action btn-primary" style="flex:1; justify-content:center; padding:12px;" onclick="downloadQrCodeImage()">
+                <i class="fa-solid fa-download"></i> <span>Download QR PNG</span>
+            </button>
+            <a href="poster.html" target="_blank" class="btn-action btn-nav" style="flex:1; justify-content:center; padding:12px;">
+                <i class="fa-solid fa-print"></i> <span>Print A4 Poster</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- DIRECT UPLOAD MODAL -->
+<div class="modal-overlay" id="directUploadModal">
+    <div class="modal-box" style="max-width:520px;">
+        <button class="close-modal" onclick="hideDirectUploadModal()"><i class="fa-solid fa-xmark"></i></button>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <div style="width:44px; height:44px; background:linear-gradient(135deg,#060608,#f95700); color:#fff; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 3px 10px rgba(249,87,0,0.4);">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+                <h2 style="font-size:19px; font-weight:800; color:#ffffff;">Direct Upload to Queue</h2>
+                <p style="font-size:12px; color:var(--text-muted);">पेन ड्राईव्ह किंवा कॉम्प्युटरमधील फाईल्स जोडा</p>
+            </div>
+        </div>
+
+        <form id="directUploadForm" onsubmit="handleDirectUploadSubmit(event)" style="margin-top:16px;">
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:5px;">Customer Name / Identifier (पर्यायी)</label>
+                <input type="text" id="duCustomerName" placeholder="उदा. काउंटर ग्राहक / पेन ड्राईव्ह" style="width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; outline:none; background:#09090e; color:#ffffff;">
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:5px;">Select Document / Images</label>
+                <div style="border:2px dashed var(--primary); background:#151520; border-radius:12px; padding:22px; text-align:center; cursor:pointer;" onclick="document.getElementById('duFiles').click()">
+                    <i class="fa-solid fa-file-arrow-up" style="font-size:32px; color:var(--primary); margin-bottom:8px;"></i>
+                    <p style="font-size:13px; font-weight:700; color:#ffffff;">Click to choose files from PC</p>
+                    <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">PDF, JPG, PNG, DOC (एकापेक्षा जास्त फाईल्स निवडू शकता)</p>
+                    <input type="file" id="duFiles" multiple accept="image/*,.pdf,.doc,.docx" style="display:none;" onchange="handleDuFileSelection(this)">
+                </div>
+                <div id="duFileList" style="margin-top:8px; max-height:120px; overflow-y:auto; font-size:12px;"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:5px;">Copies (प्रती)</label>
+                    <input type="number" id="duCopies" min="1" max="99" value="1" style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; background:#09090e; color:#ffffff;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:5px;">Color Mode</label>
+                    <select id="duColorMode" style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:700; background:#09090e; color:#ffffff;">
+                        <option value="bw">B &amp; W (कृष्ण-धवल)</option>
+                        <option value="color">Color (रंगीत)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" id="duSubmitBtn" class="btn-action btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;">
+                <i class="fa-solid fa-circle-check"></i> <span id="duBtnText">Add to Live Queue</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-box" style="max-width:480px;">
+        <button class="close-modal" onclick="hideSettingsModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h2 style="font-size:20px; font-weight:800; color:var(--text-main); margin-bottom:6px;"><i class="fa-solid fa-sliders" style="color:var(--primary); margin-right:6px;"></i> Shop Settings (सेटिंग्ज)</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">तुमच्या दुकानाचे नाव व कस्टमर लिंक बदला.</p>
+
+        <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#ff8c00; margin-bottom:5px;">Shop Name (दुकानाचे नाव)</label>
+            <input type="text" id="settingShopName" style="width:100%; padding:10px 14px; background:#07070a; color:#ffffff; border:1.5px solid var(--border); border-radius:10px; font-size:14px; outline:none;">
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#ff8c00; margin-bottom:5px;">Shop Slug (URL ओळख)</label>
+            <input type="text" id="settingShopSlug" style="width:100%; padding:10px 14px; background:#07070a; color:#ffffff; border:1.5px solid var(--border); border-radius:10px; font-size:14px; outline:none;">
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#ff8c00; margin-bottom:5px;">Custom Customer Page URL (ब्लॉगर ग्राहक पेज लिंक - पर्यायी)</label>
+            <input type="url" id="settingCustomUrl" placeholder="उदा. https://tumche-blog.blogspot.com/p/upload.html" style="width:100%; padding:10px 14px; background:#07070a; color:#ffffff; border:1.5px solid var(--border); border-radius:10px; font-size:13px; outline:none;">
+            <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:3px;">तुम्ही ब्लॉगरवर बनवलेल्या ग्राहक पेजची पूर्ण लिंक येथे टाका म्हणजे QR कोड त्याचाच बनेल.</span>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#ff8c00; margin-bottom:5px;">Contact / WhatsApp (पर्यायी)</label>
+            <input type="text" id="settingPhone" placeholder="उदा. 9876543210" style="width:100%; padding:10px 14px; background:#07070a; color:#ffffff; border:1.5px solid var(--border); border-radius:10px; font-size:14px; outline:none;">
+        </div>
+
+        <button type="button" class="btn-action btn-primary" style="width:100%; justify-content:center; padding:12px;" onclick="saveSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> <span>सेव्ह करा (Save Changes)</span>
+        </button>
+    </div>
+</div>
+
+<!-- FILE PREVIEW MODAL -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal-box" style="max-width:850px; width:95%; height:85vh; display:flex; flex-direction:column; padding:20px; background:#0e0e14; border:2px solid var(--primary);">
+        <button class="close-modal" onclick="hidePreviewModal()"><i class="fa-solid fa-xmark"></i></button>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-right:40px;">
+            <h3 id="previewTitle" style="font-size:16px; font-weight:800; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Document Preview</h3>
+            <button class="btn-job-action btn-job-print" id="previewPrintBtn"><i class="fa-solid fa-print"></i> Print Now</button>
+        </div>
+        <div id="previewContainer" style="flex:1; width:100%; background:#050508; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <!-- Iframe or Image will be injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-msg" id="toastMsg"><i class="fa-solid fa-check-circle" style="color:var(--success);"></i> <span id="toastText">Action completed</span></div>
+
+<!-- AUDIO CONTEXT CHIME SOUND -->
+<script>
+    // Web Audio Chime generator - works 100% offline without external mp3
+    const soundEnabled = { val: true };
+    function playChimeSound() {
+        if (!soundEnabled.val) return;
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = ctx.currentTime;
+            
+            // Ding
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now); // D5
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.5);
+
+            // Dong
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, now + 0.15); // A5
+            gain2.gain.setValueAtTime(0.35, now + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.8);
+        } catch(e) {
+            console.log('Audio error:', e);
+        }
+    }
+
+    function toggleSoundAlert() {
+        soundEnabled.val = !soundEnabled.val;
+        const btn = document.getElementById('soundToggleBtn');
+        const icon = document.getElementById('soundIcon');
+        const label = document.getElementById('soundLabel');
+        if (soundEnabled.val) {
+            btn.classList.add('active');
+            icon.className = 'fa-solid fa-volume-high';
+            label.innerText = 'Sound On';
+            playChimeSound();
+        } else {
+            btn.classList.remove('active');
+            icon.className = 'fa-solid fa-volume-xmark';
+            label.innerText = 'Sound Off';
+        }
+    }
+</script>
+
+<!-- APP LOGIC -->
+<script>
+    // System State
+    const AppState = {
+        shopName: localStorage.getItem('sp_shop_name') || 'सुयोग ऑनलाईन झेरॉक्स सेंटर',
+        shopSlug: localStorage.getItem('sp_shop_slug') || 'suyomsonline',
+        phone: localStorage.getItem('sp_phone') || '',
+        customCustomerUrl: localStorage.getItem('sp_custom_customer_url') || '',
+        autoPrint: localStorage.getItem('sp_auto_print') === '1',
+        requiresApproval: localStorage.getItem('sp_requires_approval') === '1',
+        autoDeleteMinutes: parseInt(localStorage.getItem('sp_auto_delete') || '5'),
+        queuePaused: localStorage.getItem('sp_queue_paused') === '1',
+        customers: []
+    };
+
+    // BroadcastChannel for cross-tab realtime messaging
+    let channel;
+    try {
+        channel = new BroadcastChannel('smart_print_channel');
+        channel.onmessage = (event) => {
+            if (event.data && event.data.type === 'NEW_CUSTOMER_UPLOAD') {
+                playChimeSound();
+                showToast(`नवीन फाईल आली! टोकन #${event.data.token} - ${event.data.customer_name}`);
+                loadQueue();
+            } else if (event.data && event.data.type === 'SETTINGS_UPDATE') {
+                loadQueue();
+            }
+        };
+    } catch(e) {
+        console.warn('BroadcastChannel not supported', e);
+    }
+
+    function initFirebaseLiveListener() {
+        try {
+            const fb = getSuyomsFirebase();
+            if (fb && fb.db) {
+                const queueRef = fb.db.ref('print_queue');
+                queueRef.on('child_added', (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
+                    console.log('Firebase incoming job:', data);
+
+                    // Check if already in AppState to avoid duplicate alert
+                    const exists = AppState.customers.some(c => c.id === data.id);
+                    if (!exists) {
+                        playChimeSound();
+                        showToast(`नवीन फाईल आली! टोकन #${data.token_number} - ${data.customer_name || 'ग्राहक'}`);
+                        
+                        // Adapt files to jobs format
+                        const jobs = (data.files || []).map((f, idx) => ({
+                            id: f.id || ('job_' + Date.now() + '_' + idx),
+                            serial_number: idx + 1,
+                            original_filename: f.name,
+                            file_size: f.size,
+                            file_type: f.type || 'doc',
+                            copies: data.copies || 1,
+                            color_mode: data.color_mode || 'bw',
+                            pages: data.pages || 'All',
+                            status: data.status || 'pending',
+                            createdAt: data.createdAt || Date.now(),
+                            dataUrl: f.dataUrl || ''
+                        }));
+
+                        const newCustomer = {
+                            id: data.id,
+                            customer_name: data.customer_name || 'ग्राहक',
+                            token_number: data.token_number,
+                            phone: data.phone || '',
+                            createdAt: data.createdAt || Date.now(),
+                            jobs: jobs,
+                            _firebase: true
+                        };
+
+                        AppState.customers.unshift(newCustomer);
+                        renderDashboard();
+
+                        // Also store in IndexedDB
+                        if (db) {
+                            try {
+                                const tx = db.transaction(['customers', 'files'], 'readwrite');
+                                tx.objectStore('customers').put(newCustomer);
+                                jobs.forEach(j => {
+                                    if (j.dataUrl) {
+                                        tx.objectStore('files').put({ id: j.id, name: j.original_filename, dataUrl: j.dataUrl });
+                                    }
+                                });
+                            } catch(e){}
+                        }
+                    }
+                });
+
+                // Listen for removed items from other tabs/admin
+                queueRef.on('child_removed', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.id) {
+                        AppState.customers = AppState.customers.filter(c => c.id !== data.id);
+                        renderDashboard();
+                    }
+                });
+            }
+        } catch(e) {
+            console.warn('Firebase init error', e);
+        }
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+        applySettingsToUI();
+        initIndexedDb(() => {
+            loadQueue();
+        });
+        initFirebaseLiveListener();
+
+        // Set up periodic poll or cleanup
+        setInterval(() => {
+            checkAutoDelete();
+        }, 30000); // every 30s
+    });
+
+    function getCustomerLink() {
+        if (AppState.customCustomerUrl && AppState.customCustomerUrl.trim().length > 5) {
+            return AppState.customCustomerUrl.trim();
+        }
+        const url = new URL(window.location.href);
+        const path = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+        return `${url.origin}${path}customer.html?shop=${encodeURIComponent(AppState.shopSlug)}`;
+    }
+
+    function applySettingsToUI() {
+        document.getElementById('shopNameDisplay').innerText = AppState.shopName;
+        document.getElementById('autoPrintToggle').checked = AppState.autoPrint;
+        document.getElementById('approvalModeToggle').checked = AppState.requiresApproval;
+        document.getElementById('autoDeleteSelect').value = AppState.autoDeleteMinutes.toString();
+
+        const pauseBtn = document.getElementById('pauseQueueBtn');
+        if (AppState.queuePaused) {
+            pauseBtn.className = 'pause-btn paused';
+            pauseBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>Queue Paused</span>';
+        } else {
+            pauseBtn.className = 'pause-btn running';
+            pauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>Queue Active</span>';
+        }
+
+        const posterLink = document.getElementById('posterLink');
+        if (posterLink) {
+            posterLink.href = `poster.html?shop=${encodeURIComponent(AppState.shopSlug)}`;
+        }
+    }
+
+    /* --- INDEXEDDB STORAGE FOR ZERO-BACKEND DEMO & PERSISTENCE --- */
+    let db;
+    function initIndexedDb(callback) {
+        const req = indexedDB.open('SmartPrintDB', 2);
+        req.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains('customers')) {
+                d.createObjectStore('customers', { keyPath: 'id' });
+            }
+            if (!d.objectStoreNames.contains('files')) {
+                d.createObjectStore('files', { keyPath: 'id' });
+            }
+        };
+        req.onsuccess = (e) => {
+            db = e.target.result;
+            if (callback) callback();
+        };
+        req.onerror = (e) => {
+            console.error('IndexedDB error', e);
+            if (callback) callback();
+        };
+    }
+
+    function loadQueue() {
+        // First try PHP backend if hosted on server
+        fetch(`api.php?action=get_queue&shop=${encodeURIComponent(AppState.shopSlug)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success) {
+                    AppState.customers = data.customers || [];
+                    renderDashboard(data);
+                } else {
+                    loadFromIndexedDb();
+                }
+            })
+            .catch(() => {
+                // Fallback to local IndexedDB
+                loadFromIndexedDb();
+            });
+    }
+
+    function loadFromIndexedDb() {
+        if (!db) return;
+        const tx = db.transaction('customers', 'readonly');
+        const store = tx.objectStore('customers');
+        const req = store.getAll();
+        req.onsuccess = () => {
+            const list = req.result || [];
+            // Sort by createdAt descending
+            list.sort((a, b) => b.createdAt - a.createdAt);
+            AppState.customers = list;
+            renderDashboard();
+        };
+    }
+
+    function renderDashboard() {
+        const customers = AppState.customers || [];
+        let totalCustomers = customers.length;
+        let pendingFiles = 0;
+        let printedFiles = 0;
+        let failedFiles = 0;
+
+        customers.forEach(c => {
+            if (c.jobs) {
+                c.jobs.forEach(j => {
+                    if (j.status === 'pending' || j.status === 'printing') pendingFiles++;
+                    else if (j.status === 'printed') printedFiles++;
+                    else if (j.status === 'failed') failedFiles++;
+                });
+            }
+        });
+
+        document.getElementById('statCustomers').innerText = totalCustomers;
+        document.getElementById('statPending').innerText = pendingFiles;
+        document.getElementById('statPrinted').innerText = printedFiles;
+        document.getElementById('statFailed').innerText = failedFiles;
+
+        const container = document.getElementById('customerQueueList');
+        if (customers.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-folder-open" style="font-size: 44px; margin-bottom: 16px; color:#94a3b8;"></i>
+                    <h3 style="font-size:18px; color:var(--text-main); margin-bottom:6px;">सध्या कोणतीही फाईल रांगेत नाही (No Customer Uploads Yet)</h3>
+                    <p style="font-size:13px; max-width:440px; margin:0 auto;">तुमच्या काउंटरचा QR कोड किंवा लिंक ग्राहकांना द्या, जेणेकरून ते मोबाईलवरून थेट प्रिंटिंगसाठी फाईल्स पाठवू शकतील.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = customers.map((cust, idx) => {
+            const jobs = cust.jobs || [];
+            const total = jobs.length;
+            const printed = jobs.filter(j => j.status === 'printed').length;
+            const isCompleted = printed === total && total > 0;
+
+            const jobRows = jobs.map((j, jIdx) => {
+                let badgeClass = 'status-pending', statusLabel = 'Pending ⏳';
+                if (j.status === 'printing') { badgeClass = 'status-printing'; statusLabel = 'Printing... 🖨️'; }
+                else if (j.status === 'printed') { badgeClass = 'status-printed'; statusLabel = 'Printed ✅'; }
+                else if (j.status === 'failed') { badgeClass = 'status-failed'; statusLabel = 'Failed ⚠️'; }
+
+                const fileIcon = getFileIcon(j.original_filename);
+
+                return `
+                    <tr>
+                        <td style="font-weight:700; color:var(--primary);">#${jIdx + 1}</td>
+                        <td>
+                            <div style="font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                                <i class="${fileIcon}" style="color:var(--primary); font-size:15px;"></i>
+                                <span style="max-width:280px; word-break:break-all;">${escapeHtml(j.original_filename)}</span>
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                                ${formatBytes(j.file_size)} · ${(j.file_type || 'DOC').toUpperCase()} · ${formatTime(j.createdAt || cust.createdAt)}
+                            </div>
+                        </td>
+                        <td style="font-weight:700; font-size:14px;">${j.copies || 1} Copies</td>
+                        <td>
+                            <span style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; background:${j.color_mode === 'color' ? '#fdf2f8; color:#be185d' : 'var(--border-light); color:var(--text-sub)'};">
+                                ${j.color_mode === 'color' ? '🎨 Color' : '⚫ B & W'}
+                            </span>
+                        </td>
+                        <td><span class="job-status-badge ${badgeClass}">${statusLabel}</span></td>
+                        <td>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button class="btn-job-action btn-job-print" onclick="triggerJobPrint('${cust.id}', '${j.id}')">
+                                    <i class="fa-solid fa-print"></i> Print
+                                </button>
+                                <button class="btn-job-action" onclick="viewFile('${cust.id}', '${j.id}', '${escapeHtml(j.original_filename)}')" title="View File">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-job-action" onclick="downloadJobFile('${cust.id}', '${j.id}', '${escapeHtml(j.original_filename)}')" title="Download">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
+                                <button class="btn-job-action" style="color:var(--danger);" onclick="deleteJob('${cust.id}', '${j.id}')" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const firstLetter = (cust.customer_name && cust.customer_name.trim()) 
+                ? cust.customer_name.trim().charAt(0).toUpperCase() 
+                : 'C';
+
+            return `
+                <div class="customer-card ${idx === 0 || !isCompleted ? 'open' : ''}" id="card_${cust.id}">
+                    <div class="customer-header" onclick="toggleCustomerCard('card_${cust.id}')">
+                        <div class="customer-title-wrap">
+                            <div class="customer-avatar">${firstLetter}</div>
+                            <div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="customer-name">${escapeHtml(cust.customer_name || 'Walk-in Customer')}</span>
+                                    <span class="token-badge">Token #${cust.token_number || (idx + 101)}</span>
+                                </div>
+                                <div class="customer-meta">
+                                    <span><i class="fa-solid fa-file" style="margin-right:4px;"></i>${total} Document(s)</span>
+                                    <span>•</span>
+                                    <span><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${formatTime(cust.createdAt)}</span>
+                                    ${cust.phone ? `<span>•</span><span><i class="fa-solid fa-phone" style="margin-right:4px;"></i>${escapeHtml(cust.phone)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <span class="customer-ratio ${isCompleted ? 'completed' : ''}">
+                                <i class="fa-solid ${isCompleted ? 'fa-circle-check' : 'fa-hourglass-half'}"></i>
+                                ${printed}/${total} Printed
+                            </span>
+                            <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                        </div>
+                    </div>
+                    <div class="customer-body">
+                        <table class="jobs-table">
+                            <thead>
+                                <tr><th>#</th><th>Document</th><th>Copies</th><th>Color Mode</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>${jobRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleCustomerCard(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('open');
+    }
+
+    function getFileIcon(filename) {
+        const ext = (filename || '').split('.').pop().toLowerCase();
+        if (ext === 'pdf') return 'fa-solid fa-file-pdf';
+        if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) return 'fa-solid fa-file-image';
+        if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
+        return 'fa-solid fa-file-lines';
+    }
+
+    /* --- PRINTING & PREVIEW ACTIONS --- */
+    function triggerJobPrint(custId, jobId) {
+        updateJobStatus(custId, jobId, 'printing');
+        
+        // Fetch file blob from storage
+        getFileBlob(jobId, (blob, filename) => {
+            if (!blob) {
+                // If backend file path is available
+                window.open(`uploads/${jobId}_${filename}`, '_blank');
+                updateJobStatus(custId, jobId, 'printed');
+                return;
+            }
+
+            const fileUrl = URL.createObjectURL(blob);
+            const isPdf = blob.type === 'application/pdf' || (filename && filename.toLowerCase().endsWith('.pdf'));
+            const isImage = blob.type.startsWith('image/') || (filename && /\.(jpe?g|png|webp)$/i.test(filename));
+
+            if (isPdf) {
+                // Open in hidden iframe for silent print dialog
+                let printFrame = document.getElementById('hiddenPrintFrame');
+                if (!printFrame) {
+                    printFrame = document.createElement('iframe');
+                    printFrame.id = 'hiddenPrintFrame';
+                    printFrame.style.display = 'none';
+                    document.body.appendChild(printFrame);
+                }
+                printFrame.src = fileUrl;
+                printFrame.onload = () => {
+                    try {
+                        printFrame.contentWindow.focus();
+                        printFrame.contentWindow.print();
+                        updateJobStatus(custId, jobId, 'printed');
+                    } catch(e) {
+                        window.open(fileUrl, '_blank');
+                        updateJobStatus(custId, jobId, 'printed');
+                    }
+                };
+            } else if (isImage) {
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                    <head><title>Print: ${escapeHtml(filename)}</title>
+                    <style>
+                        @page { margin: 0; size: auto; }
+                        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background:#fff; }
+                        img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                    </style>
+                    </head>
+                    <body>
+                        <img src="${fileUrl}" onload="window.print(); window.close();" />
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                updateJobStatus(custId, jobId, 'printed');
+            } else {
+                window.open(fileUrl, '_blank');
+                updateJobStatus(custId, jobId, 'printed');
+            }
+        });
+    }
+
+    function viewFile(custId, jobId, filename) {
+        const previewModal = document.getElementById('previewModal');
+        const previewTitle = document.getElementById('previewTitle');
+        const container = document.getElementById('previewContainer');
+        const printBtn = document.getElementById('previewPrintBtn');
+
+        previewTitle.innerText = filename;
+        previewModal.style.display = 'flex';
+        container.innerHTML = '<div style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px;">Loading preview...</p></div>';
+
+        printBtn.onclick = () => {
+            triggerJobPrint(custId, jobId);
+        };
+
+        getFileBlob(jobId, (blob) => {
+            if (!blob) {
+                container.innerHTML = `<p style="color:var(--text-muted);">Preview not available locally. <a href="uploads/${jobId}_${filename}" target="_blank">Open in new tab</a></p>`;
+                return;
+            }
+            const fileUrl = URL.createObjectURL(blob);
+            if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+                container.innerHTML = `<iframe src="${fileUrl}" style="width:100%; height:100%; border:none;"></iframe>`;
+            } else if (blob.type.startsWith('image/')) {
+                container.innerHTML = `<img src="${fileUrl}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">`;
+            } else {
+                container.innerHTML = `
+                    <div style="text-align:center;">
+                        <i class="fa-solid fa-file-lines fa-3x" style="color:var(--primary); margin-bottom:12px;"></i>
+                        <p style="font-weight:700;">${escapeHtml(filename)}</p>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Cannot preview DOCX inline. Please download or print directly.</p>
+                        <a href="${fileUrl}" download="${escapeHtml(filename)}" class="btn-action btn-primary" style="margin-top:14px; display:inline-flex;">Download File</a>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function hidePreviewModal() {
+        document.getElementById('previewModal').style.display = 'none';
+        document.getElementById('previewContainer').innerHTML = '';
+    }
+
+    function downloadJobFile(custId, jobId, filename) {
+        getFileBlob(jobId, (blob) => {
+            if (!blob) {
+                window.open(`uploads/${jobId}_${filename}`, '_blank');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+        });
+    }
+
+    function updateJobStatus(custId, jobId, newStatus) {
+        // Try API first
+        fetch('api.php?action=update_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_id: custId, job_id: jobId, status: newStatus })
+        }).catch(() => {});
+
+        // Local IndexedDB update
+        if (!db) return;
+        const tx = db.transaction('customers', 'readwrite');
+        const store = tx.objectStore('customers');
+        const req = store.get(custId);
+        req.onsuccess = () => {
+            const cust = req.result;
+            if (cust && cust.jobs) {
+                const job = cust.jobs.find(j => j.id === jobId);
+                if (job) {
+                    job.status = newStatus;
+                    store.put(cust);
+                    loadQueue();
+                }
+            }
+        };
+    }
+
+    function deleteJob(custId, jobId) {
+        if (!confirm('ही प्रिंट फाईल काढून टाकायची आहे का? (Delete this file?)')) return;
+
+        // Try API
+        fetch(`api.php?action=delete_job&job_id=${encodeURIComponent(jobId)}&customer_id=${encodeURIComponent(custId)}`, { method: 'POST' }).catch(() => {});
+
+        // Local IndexedDB
+        if (!db) return;
+        const tx = db.transaction(['customers', 'files'], 'readwrite');
+        const custStore = tx.objectStore('customers');
+        const fileStore = tx.objectStore('files');
+        
+        fileStore.delete(jobId);
+        
+        const req = custStore.get(custId);
+        req.onsuccess = () => {
+            const cust = req.result;
+            if (cust) {
+                cust.jobs = (cust.jobs || []).filter(j => j.id !== jobId);
+                if (cust.jobs.length === 0) {
+                    custStore.delete(custId);
+                } else {
+                    custStore.put(cust);
+                }
+                showToast('फाईल हटवण्यात आली');
+                loadQueue();
+            }
+        };
+    }
+
+    function clearCompletedJobs() {
+        if (!confirm('सर्व प्रिंट झालेले आणि पूर्ण झालेले जॉब्स साफ करायचे का? (Clear all completed jobs?)')) return;
+
+        fetch('api.php?action=clear_completed', { method: 'POST' }).catch(() => {});
+
+        if (!db) return;
+        const tx = db.transaction('customers', 'readwrite');
+        const store = tx.objectStore('customers');
+        const req = store.getAll();
+        req.onsuccess = () => {
+            const list = req.result || [];
+            list.forEach(cust => {
+                const pending = (cust.jobs || []).filter(j => j.status !== 'printed');
+                if (pending.length === 0) {
+                    store.delete(cust.id);
+                } else {
+                    cust.jobs = pending;
+                    store.put(cust);
+                }
+            });
+            showToast('प्रिंट झालेले जॉब्स हटवले');
+            loadQueue();
+        };
+    }
+
+    function checkAutoDelete() {
+        if (AppState.autoDeleteMinutes <= 0 || !db) return;
+        const cutoffTime = Date.now() - (AppState.autoDeleteMinutes * 60 * 1000);
+
+        const tx = db.transaction('customers', 'readwrite');
+        const store = tx.objectStore('customers');
+        const req = store.getAll();
+        req.onsuccess = () => {
+            const list = req.result || [];
+            let changed = false;
+            list.forEach(c => {
+                if (c.createdAt < cutoffTime) {
+                    store.delete(c.id);
+                    changed = true;
+                }
+            });
+            if (changed) loadQueue();
+        };
+    }
+
+    function getFileBlob(jobId, callback) {
+        // First check in-memory customer jobs for Firebase dataUrl
+        for (const c of AppState.customers) {
+            if (c.jobs) {
+                const j = c.jobs.find(item => item.id === jobId);
+                if (j && j.dataUrl) {
+                    try {
+                        const arr = j.dataUrl.split(',');
+                        const mime = arr[0].match(/:(.*?);/)[1];
+                        const bstr = atob(arr[1]);
+                        let n = bstr.length;
+                        const u8arr = new Uint8Array(n);
+                        while (n--) {
+                            u8arr[n] = bstr.charCodeAt(n);
+                        }
+                        const blob = new Blob([u8arr], { type: mime });
+                        callback(blob, j.original_filename);
+                        return;
+                    } catch(e) {
+                        console.warn('Error converting dataUrl to blob', e);
+                    }
+                }
+            }
+        }
+
+        if (!db) { callback(null); return; }
+        const tx = db.transaction('files', 'readonly');
+        const store = tx.objectStore('files');
+        const req = store.get(jobId);
+        req.onsuccess = () => {
+            if (req.result && req.result.blob) {
+                callback(req.result.blob, req.result.name);
+            } else if (req.result && req.result.dataUrl) {
+                try {
+                    const arr = req.result.dataUrl.split(',');
+                    const mime = arr[0].match(/:(.*?);/)[1];
+                    const bstr = atob(arr[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while (n--) {
+                        u8arr[n] = bstr.charCodeAt(n);
+                    }
+                    const blob = new Blob([u8arr], { type: mime });
+                    callback(blob, req.result.name);
+                } catch(e) {
+                    callback(null, req.result.name);
+                }
+            } else {
+                callback(null);
+            }
+        };
+        req.onerror = () => callback(null);
+    }
+
+    /* --- DIRECT UPLOAD MODAL & FORM --- */
+    let duSelectedFiles = [];
+    function showDirectUploadModal() {
+        document.getElementById('directUploadModal').style.display = 'flex';
+    }
+    function hideDirectUploadModal() {
+        document.getElementById('directUploadModal').style.display = 'none';
+        document.getElementById('directUploadForm').reset();
+        document.getElementById('duFileList').innerHTML = '';
+        duSelectedFiles = [];
+    }
+
+    function handleDuFileSelection(input) {
+        if (!input.files) return;
+        duSelectedFiles = Array.from(input.files);
+        const list = document.getElementById('duFileList');
+        list.innerHTML = duSelectedFiles.map(f => `
+            <div style="padding:6px 10px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:600; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;">${escapeHtml(f.name)}</span>
+                <span style="color:#64748b; font-size:11px;">${formatBytes(f.size)}</span>
+            </div>
+        `).join('');
+    }
+
+    async function handleDirectUploadSubmit(e) {
+        e.preventDefault();
+        if (duSelectedFiles.length === 0) {
+            alert('कृपया किमान 1 फाईल निवडा (Please select at least 1 file).');
+            return;
+        }
+
+        const custName = document.getElementById('duCustomerName').value.trim() || 'काउंटर थेट अपलोड (Direct Upload)';
+        const copies = parseInt(document.getElementById('duCopies').value) || 1;
+        const colorMode = document.getElementById('duColorMode').value || 'bw';
+        const submitBtn = document.getElementById('duSubmitBtn');
+        const btnText = document.getElementById('duBtnText');
+
+        btnText.innerText = 'अपलोड होत आहे... (Adding to Queue)';
+        submitBtn.disabled = true;
+
+        const customerId = 'cust_' + Date.now();
+        const tokenNum = Math.floor(100 + Math.random() * 900);
+        const jobs = [];
+
+        // Save to IndexedDB
+        if (db) {
+            const tx = db.transaction(['customers', 'files'], 'readwrite');
+            const custStore = tx.objectStore('customers');
+            const fileStore = tx.objectStore('files');
+
+            for (let i = 0; i < duSelectedFiles.length; i++) {
+                const file = duSelectedFiles[i];
+                const jobId = 'job_' + Date.now() + '_' + i;
+                fileStore.put({ id: jobId, name: file.name, blob: file });
+                jobs.push({
+                    id: jobId,
+                    serial_number: i + 1,
+                    original_filename: file.name,
+                    file_size: file.size,
+                    file_type: file.name.split('.').pop() || 'doc',
+                    copies: copies,
+                    color_mode: colorMode,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+            }
+
+            const customerRecord = {
+                id: customerId,
+                customer_name: custName,
+                token_number: tokenNum,
+                phone: '',
+                createdAt: Date.now(),
+                jobs: jobs
+            };
+
+            custStore.put(customerRecord);
+        }
+
+        // Also post to PHP backend if available
+        try {
+            const formData = new FormData();
+            formData.append('customer_name', custName);
+            formData.append('shop_slug', AppState.shopSlug);
+            formData.append('copies', copies);
+            formData.append('color_mode', colorMode);
+            for (let i = 0; i < duSelectedFiles.length; i++) {
+                formData.append('files[]', duSelectedFiles[i]);
+            }
+            fetch('api.php?action=upload', { method: 'POST', body: formData }).catch(() => {});
+        } catch(err) {}
+
+        setTimeout(() => {
+            btnText.innerText = 'Add to Live Queue';
+            submitBtn.disabled = false;
+            hideDirectUploadModal();
+            showToast(`टोकन #${tokenNum} रांगेत जोडले गेले!`);
+            loadQueue();
+        }, 400);
+    }
+
+    /* --- QR CODE MODAL --- */
+    let qrInstance = null;
+    function showQrModal() {
+        document.getElementById('qrModal').style.display = 'flex';
+        document.getElementById('qrShopName').innerText = AppState.shopName;
+        const targetUrl = getCustomerLink();
+
+        const canvasBox = document.getElementById('qrcodeCanvas');
+        canvasBox.innerHTML = '';
+        qrInstance = new QRCode(canvasBox, {
+            text: targetUrl,
+            width: 190,
+            height: 190,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    function hideQrModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function downloadQrCodeImage() {
+        const canvas = document.querySelector('#qrcodeCanvas canvas');
+        const img = document.querySelector('#qrcodeCanvas img');
+        const link = document.createElement('a');
+        link.download = `${AppState.shopSlug}_counter_qr.png`;
+        if (canvas) {
+            link.href = canvas.toDataURL('image/png');
+        } else if (img) {
+            link.href = img.src;
+        }
+        link.click();
+        showToast('QR कोड डाउनलोड झाला!');
+    }
+
+    function copyCustomerUrl() {
+        const url = getCustomerLink();
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('copyBtnText');
+            btn.innerText = 'Copied! ✅';
+            showToast('ग्राहकाची लिंक कॉपी झाली!');
+            setTimeout(() => btn.innerText = 'Copy Customer Link', 2500);
+        });
+    }
+
+    /* --- SETTINGS MODAL --- */
+    function showSettingsModal() {
+        document.getElementById('settingShopName').value = AppState.shopName;
+        document.getElementById('settingShopSlug').value = AppState.shopSlug;
+        document.getElementById('settingCustomUrl').value = AppState.customCustomerUrl || '';
+        document.getElementById('settingPhone').value = AppState.phone;
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    function hideSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function saveSettings() {
+        const newName = document.getElementById('settingShopName').value.trim();
+        const newSlug = document.getElementById('settingShopSlug').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+        const newCustomUrl = document.getElementById('settingCustomUrl').value.trim();
+        const newPhone = document.getElementById('settingPhone').value.trim();
+
+        if (!newName) { alert('कृपया दुकानाचे नाव प्रविष्ट करा'); return; }
+
+        AppState.shopName = newName;
+        AppState.shopSlug = newSlug || 'suyomsonline';
+        AppState.customCustomerUrl = newCustomUrl;
+        AppState.phone = newPhone;
+
+        localStorage.setItem('sp_shop_name', AppState.shopName);
+        localStorage.setItem('sp_shop_slug', AppState.shopSlug);
+        localStorage.setItem('sp_custom_customer_url', AppState.customCustomerUrl);
+        localStorage.setItem('sp_phone', AppState.phone);
+        AppState.phone = newPhone;
+
+        localStorage.setItem('sp_shop_name', AppState.shopName);
+        localStorage.setItem('sp_shop_slug', AppState.shopSlug);
+        localStorage.setItem('sp_phone', AppState.phone);
+
+        applySettingsToUI();
+        hideSettingsModal();
+        showToast('सेटिंग्ज यशस्वीरीत्या सेव्ह केल्या!');
+
+        if (channel) {
+            channel.postMessage({ type: 'SETTINGS_UPDATE' });
+        }
+    }
+
+    /* --- TOGGLE CONTROLS --- */
+    function toggleAutoPrint(checked) {
+        AppState.autoPrint = checked;
+        localStorage.setItem('sp_auto_print', checked ? '1' : '0');
+        showToast(checked ? 'Auto-Print चालू केले (Enabled)' : 'Auto-Print बंद केले (Disabled)');
+    }
+
+    function toggleApprovalMode(checked) {
+        AppState.requiresApproval = checked;
+        localStorage.setItem('sp_requires_approval', checked ? '1' : '0');
+        showToast(checked ? 'Approval Mode चालू केले' : 'Approval Mode बंद केले');
+    }
+
+    function changeAutoDelete(val) {
+        AppState.autoDeleteMinutes = parseInt(val);
+        localStorage.setItem('sp_auto_delete', val);
+        showToast(`Auto-Delete ${val > 0 ? val + ' मिनिटांवर' : 'बंद'} सेट केले`);
+    }
+
+    function togglePauseQueue() {
+        AppState.queuePaused = !AppState.queuePaused;
+        localStorage.setItem('sp_queue_paused', AppState.queuePaused ? '1' : '0');
+        applySettingsToUI();
+        showToast(AppState.queuePaused ? 'Queue थांबवली गेली (Paused)' : 'Queue सुरू झाली (Active)');
+    }
+
+    /* --- HELPERS --- */
+    function showToast(msg) {
+        const toast = document.getElementById('toastMsg');
+        const text = document.getElementById('toastText');
+        text.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    function formatTime(timestamp) {
+        if (!timestamp) return 'आत्ताच';
+        const d = new Date(timestamp);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A4 Counter QR Poster | स्मार्ट प्रिंट पोस्टर</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="js/qrcode.min.js"><\/script>');
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #f95700; /* ठळक भगवा */
+            --primary-hover: #ff6f1a;
+            --primary-dark: #c03d00;
+            --dark-bg: #09090d; /* काळा */
+            --dark-card: #121218;
+            --border-color: #262636;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', 'Noto Sans Devanagari', sans-serif; }
+        
+        body {
+            background: #060609;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 0;
+            color: #ffffff;
+        }
+
+        /* TOP ACTION BAR */
+        .top-bar {
+            width: 210mm;
+            max-width: 95vw;
+            background: #0f0f15;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #f95700, #ff6f1a);
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(249, 87, 0, 0.4);
+            transition: all 0.2s;
+        }
+        .btn-print:hover { transform: translateY(-1px); background: linear-gradient(135deg, #ff6f1a, #c03d00); }
+
+        /* A4 PAGE CONTAINER - काळा आणि भगवा */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            height: 297mm;
+            background: #09090d;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            border: 5px solid #1a1a24;
+            outline: 4px solid var(--primary);
+            color: #ffffff;
+        }
+
+        /* HEADER - काळा आणि भगवा */
+        .poster-header {
+            background: #060608;
+            color: #ffffff;
+            padding: 32px 24px 26px;
+            text-align: center;
+            position: relative;
+            border-bottom: 4px solid var(--primary);
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(249, 87, 0, 0.15);
+            border: 2px solid var(--primary);
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #ff8c00;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .shop-title {
+            font-size: 34px;
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .shop-subtitle {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ff8c00;
+            margin-top: 6px;
+        }
+
+        /* CENTER CONTENT */
+        .poster-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 30px;
+            text-align: center;
+        }
+
+        .highlight-banner {
+            background: rgba(249, 87, 0, 0.12);
+            border: 2px dashed var(--primary);
+            border-radius: 14px;
+            padding: 12px 24px;
+            color: #ff9233;
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 22px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* QR CODE WRAPPER */
+        .qr-outer-frame {
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 24px;
+            border: 5px solid var(--primary);
+            box-shadow: 0 10px 35px rgba(249, 87, 0, 0.25);
+            display: inline-block;
+            position: relative;
+        }
+
+        .qr-canvas-box {
+            width: 240px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-canvas-box canvas, .qr-canvas-box img {
+            width: 240px !important;
+            height: 240px !important;
+        }
+
+        .qr-caption {
+            font-size: 16px;
+            font-weight: 900;
+            color: #ff8c00;
+            margin-top: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        /* 3-STEP GUIDE */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            width: 100%;
+            margin-top: 26px;
+        }
+
+        .step-box {
+            background: #111118;
+            border: 1.5px solid #262636;
+            border-top: 4px solid var(--primary);
+            border-radius: 14px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+
+        .step-num {
+            width: 36px;
+            height: 36px;
+            background: #060609;
+            color: #ff8c00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            margin: 0 auto 8px;
+            border: 2px solid var(--primary);
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+
+        .step-desc {
+            font-size: 11px;
+            color: #a1a1aa;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* FOOTER */
+        .poster-footer {
+            background: #060608;
+            border-top: 4px solid var(--primary);
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #e4e4e7;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .footer-pill {
+            background: rgba(249, 87, 0, 0.2);
+            color: #ff8c00;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--primary);
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        @media print {
+            body { background: transparent; padding: 0; }
+            .top-bar { display: none !important; }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                width: 210mm;
+                height: 297mm;
+                border: 4px solid #1a1a24;
+                page-break-after: always;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
+            color: #ff9233;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        @media print {
+            body { background: transparent; padding: 0; }
+            .top-bar { display: none !important; }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                width: 210mm;
+                height: 297mm;
+                border: 4px solid #0d0d11;
+                page-break-after: always;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div style="font-weight:800; font-size:15px;">
+        <i class="fa-solid fa-print" style="color:var(--primary); margin-right:8px;"></i>
+        A4 काउंटर पोस्टर (Ready to Print)
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+        <button class="btn-print" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> प्रिंट करा (Print A4 Poster)
+        </button>
+    </div>
+</div>
+
+<div class="a4-page">
+    <!-- HEADER -->
+    <header class="poster-header">
+        <div class="brand-badge">
+            <i class="fa-solid fa-bolt"></i> स्मार्ट डिजिटल प्रिंट काउंटर
+        </div>
+        <h1 class="shop-title" id="shopTitlePoster">सुयोग ऑनलाईन झेरॉक्स सेंटर</h1>
+        <div class="shop-subtitle">स्मार्ट झेरॉक्स, कलर प्रिंट आणि ऑनलाईन सेवा</div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <div class="poster-content">
+        <div class="highlight-banner">
+            <i class="fa-solid fa-mobile-screen-button" style="font-size:22px; color:var(--primary);"></i>
+            <span>व्हॉट्सॲप नंबर मागण्याची गरज नाही! थेट मोबाईलवरून फाईल्स पाठवा!</span>
+        </div>
+
+        <!-- QR FRAME -->
+        <div class="qr-outer-frame">
+            <div class="qr-canvas-box" id="posterQrCanvas"></div>
+            <div class="qr-caption">
+                <i class="fa-solid fa-camera" style="color:var(--primary); margin-right:6px;"></i>
+                कॅमेऱ्याने स्कॅन करा (Scan to Print)
+            </div>
+        </div>
+
+        <!-- 3 STEPS -->
+        <div class="steps-grid">
+            <div class="step-box">
+                <div class="step-num">१</div>
+                <div class="step-title">QR स्कॅन करा</div>
+                <div class="step-desc">मोबाईल कॅमेरा किंवा Google Lens वापरा</div>
+            </div>
+            <div class="step-box">
+                <div class="step-num">२</div>
+                <div class="step-title">फाईल्स निवडा</div>
+                <div class="step-desc">PDF, Photos, डॉक्युमेंट्स सिलेक्ट करा</div>
+            </div>
+            <div class="step-box">
+                <div class="step-num">३</div>
+                <div class="step-title">टोकन सांगा</div>
+                <div class="step-desc">काउंटरवर टोकन दाखवून प्रिंट मिळवा</div>
+            </div>
+        </div>
+
+        <div style="margin-top:22px; font-size:13px; font-weight:700; color:#a1a1aa; display:flex; gap:16px;">
+            <span><i class="fa-solid fa-circle-check" style="color:#4ade80; margin-right:5px;"></i> PDF & Docs</span>
+            <span><i class="fa-solid fa-circle-check" style="color:#4ade80; margin-right:5px;"></i> Photos & JPG</span>
+            <span><i class="fa-solid fa-circle-check" style="color:#4ade80; margin-right:5px;"></i> Color & B/W Print</span>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="poster-footer">
+        <div>
+            <i class="fa-solid fa-shop" style="color:var(--primary); margin-right:6px;"></i>
+            <span id="footerShopName">सुयोग ऑनलाईन झेरॉक्स सेंटर</span>
+        </div>
+        <div class="footer-pill">
+            🚀 जलद · सुरक्षित · सोपे
+        </div>
+    </footer>
+</div>
+
+<script>
+    let qrRendered = false;
+
+    function renderPosterQr() {
+        if (qrRendered) return; // Prevent double rendering
+
+        const container = document.getElementById('posterQrCanvas');
+        if (!container) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const shopSlug = urlParams.get('shop') || localStorage.getItem('sp_shop_slug') || 'suyomsonline';
+        const shopName = localStorage.getItem('sp_shop_name') || 'सुयोग ऑनलाईन झेरॉक्स सेंटर';
+        const customUrl = urlParams.get('url') || localStorage.getItem('sp_custom_customer_url') || '';
+
+        document.getElementById('shopTitlePoster').innerText = shopName;
+        document.getElementById('footerShopName').innerText = shopName;
+
+        // Formulate customer URL
+        let customerUrl = '';
+        if (customUrl && customUrl.trim().length > 5) {
+            customerUrl = customUrl.trim();
+        } else {
+            const url = new URL(window.location.href);
+            const path = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+            customerUrl = `${url.origin}${path}customer.html?shop=${encodeURIComponent(shopSlug)}`;
+        }
+
+        container.innerHTML = '';
+
+        // Clean, direct image QR: zero duplication, instant load, works 100% on Blogger
+        const img = document.createElement('img');
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(customerUrl)}`;
+        img.alt = 'Counter QR Code';
+        img.style.width = '240px';
+        img.style.height = '240px';
+        img.style.display = 'block';
+        img.style.margin = '0 auto';
+        container.appendChild(img);
+
+        qrRendered = true;
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderPosterQr);
+    } else {
+        renderPosterQr();
+    }
+</script>
+
+</body>
+</html>
